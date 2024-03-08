@@ -10,6 +10,53 @@ from sklearn.model_selection import train_test_split
 import tensorflow as tf
 
 
+import tensorflow as tf
+
+def conv_block(inputs, num_filters):
+    x = tf.keras.layers.Conv2D(num_filters, 3, padding="same")(inputs)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.Activation("relu")(x)
+
+    x = tf.keras.layers.Conv2D(num_filters, 3, padding="same")(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.Activation("relu")(x)
+    return x
+
+def encoder_block(inputs, num_filters):
+    x = conv_block(inputs, num_filters)
+    p = tf.keras.layers.MaxPooling2D((2, 2))(x)
+    return x, p
+
+def decoder_block(inputs, skip_features, num_filters):
+    x = tf.keras.layers.Conv2DTranspose(num_filters, (2, 2), strides=2, padding="same")(inputs)
+    x = tf.keras.layers.Concatenate()([x, skip_features])
+    x = conv_block(x, num_filters)
+    return x
+
+def unet_model(input_shape):
+    inputs = tf.keras.Input(input_shape)
+
+    s1, p1 = encoder_block(inputs, 64)
+    s2, p2 = encoder_block(p1, 128)
+    s3, p3 = encoder_block(p2, 256)
+    s4, p4 = encoder_block(p3, 512)
+
+    b1 = conv_block(p4, 1024)
+
+    d1 = decoder_block(b1, s4, 512)
+    d2 = decoder_block(d1, s3, 256)
+    d3 = decoder_block(d2, s2, 128)
+    d4 = decoder_block(d3, s1, 64)
+
+    outputs = tf.keras.layers.Conv2D(1, 1, padding="same", activation="sigmoid")(d4)
+
+    model = tf.keras.Model(inputs, outputs, name="U-Net")
+    return model
+
+model = unet_model((256, 256, 1))  # Adjust input shape to match your dataset
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+model.summary()
+
 
 def load_image_paths(directory):
     file_paths = []
@@ -133,8 +180,37 @@ batch_loaders = check_and_process_images(
 )
 
 
+# Model is defined and compiled
+EPOCHS = 10  # Adjust based on your requirements
+STEPS_PER_EPOCH = 100  # Adjust based on the size of your training dataset and batch size
+VALIDATION_STEPS = 20  # Adjust based on the size of your validation dataset and batch size
 
-# # Example of how we might use the batches
-# for input_batch, output_batch in zip(input_batches, output_batches):
-#     # Here we would feed each batch into your model for training, prediction, etc.
-#     pass
+# Training Loop
+for epoch in range(EPOCHS):
+    print(f'Epoch {epoch+1}/{EPOCHS}')
+    # Train
+    for step, (input_batch, output_batch) in enumerate(batch_loaders['train']):
+        train_loss, train_accuracy = model.train_on_batch(input_batch, output_batch)
+        if step >= STEPS_PER_EPOCH:
+            break
+    print(f'Training loss: {train_loss}, Training accuracy: {train_accuracy}')
+
+    # Validate
+    val_losses, val_accuracies = [], []
+    for step, (input_batch, output_batch) in enumerate(batch_loaders['val']):
+        val_loss, val_accuracy = model.test_on_batch(input_batch, output_batch)
+        val_losses.append(val_loss)
+        val_accuracies.append(val_accuracy)
+        if step >= VALIDATION_STEPS:
+            break
+    avg_val_loss, avg_val_accuracy = np.mean(val_losses), np.mean(val_accuracies)
+    print(f'Validation loss: {avg_val_loss}, Validation accuracy: {avg_val_accuracy}')
+
+# Test
+test_losses, test_accuracies = [], []
+for input_batch, output_batch in batch_loaders['test']:
+    test_loss, test_accuracy = model.evaluate(input_batch, output_batch, verbose=0)
+    test_losses.append(test_loss)
+    test_accuracies.append(test_accuracy)
+avg_test_loss, avg_test_accuracy = np.mean(test_losses), np.mean(test_accuracies)
+print(f'Test loss: {avg_test_loss}, Test accuracy: {avg_test_accuracy}')
