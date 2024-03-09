@@ -173,11 +173,18 @@ processed_dirs = {
 reduce_factor = 0.5  # Adjust this based on requirements
 crop_box = (1670, 632, 5400, 3850)  # Adjust this as necessary
 
+
 # Process images and get batch loaders for each dataset
 batch_loaders = check_and_process_images(
     input_directory, output_directory, processed_dirs,
     reduce_factor=reduce_factor, test_size=0.2, val_size=0.25
 )
+
+# Just for checking;
+for sample in next(batch_loaders['train']):
+    print(len(sample))
+    print(sample[0].shape, sample[1].shape)  # Check the shape of the inputs and outputs
+    break  # Remove or comment out after checking
 
 
 # Model is defined and compiled

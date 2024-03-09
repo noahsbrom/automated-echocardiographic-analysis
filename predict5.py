@@ -53,7 +53,7 @@ def unet_model(input_shape):
     model = tf.keras.Model(inputs, outputs, name="U-Net")
     return model
 
-model = unet_model((512, 512, 1))  # # Adjust input shape to match dataset
+model = unet_model((500, 500, 1))  # # Adjust input shape to match dataset
 model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 model.summary()
 
@@ -68,22 +68,36 @@ def load_image_paths(directory):
             filenames.append(filename)
     return file_paths, filenames
 
-def save_processed_images(file_paths, save_directory, final_size=(512, 512)):
+def save_processed_images(file_paths, save_directory, reduce_factor=None, crop_box=None):
+    """
+    Processes and saves images from file paths. The processing includes conversion to grayscale,
+    optional resizing, and optional cropping.
+
+    Parameters:
+        file_paths (list): List of file paths to process.
+        save_directory (str): Directory to save processed images.
+        reduce_factor (float, optional): Factor to scale down images. If None, no resizing is applied.
+        crop_box (tuple, optional): The crop box is a 4-tuple defining the left, upper, right, and lower pixel coordinate.
+    """
     if not os.path.exists(save_directory):
         os.makedirs(save_directory)
     for file_path in tqdm(file_paths, desc="Processing and saving images"):
         with Image.open(file_path) as img:
             # Convert the image to grayscale
             img = img.convert('L')
-            # Resize the image to the final size (512x512)
-            img = img.resize(final_size, Image.Resampling.LANCZOS)  # Change here
+            # Crop the image if a crop box is provided
+            if crop_box:
+                img = img.crop(crop_box)
+            # Resize the image if a reduce factor is provided
+            if reduce_factor:
+                original_size = img.size
+                new_size = (int(original_size[0] * reduce_factor), int(original_size[1] * reduce_factor))
+                img = img.resize(new_size, Image.ANTIALIAS)
             # Save the processed image
             base_name = os.path.basename(file_path)
             new_filename = os.path.splitext(base_name)[0] + '.png'
             save_path = os.path.join(save_directory, new_filename)
             img.save(save_path, 'PNG')
-
-
 
 def batch_load_saved_images(directory, batch_size=10):
     filenames = sorted([f for f in os.listdir(directory) if f.endswith('.png')])
@@ -114,8 +128,8 @@ def check_and_process_images(input_directory, output_directory, processed_dirs, 
 
         if not os.path.exists(processed_input_directory) or not os.listdir(processed_input_directory) or not os.path.exists(processed_output_directory) or not os.listdir(processed_output_directory):
             print(f"Processing and saving {set_type} images...")
-            save_processed_images(input_set, processed_input_directory)
-            save_processed_images(output_set, processed_output_directory)
+            save_processed_images(input_set, processed_input_directory, reduce_factor=reduce_factor)
+            save_processed_images(output_set, processed_output_directory, reduce_factor=reduce_factor)
 
         batch_loaders[set_type] = (
             batch_load_saved_images(processed_input_directory),
@@ -141,6 +155,7 @@ def split_data(input_paths, output_paths, test_size=0.2, val_size=0.25):
 
     return (train_input, train_output), (val_input, val_output), (test_input, test_output)
 
+
 # Set directory paths and process images
 input_directory = 'input'
 output_directory = 'output'
@@ -154,6 +169,7 @@ processed_dirs = {
     'test': ('processed_input/test', 'processed_output/test')
 }
 
+# Update this with appropriate scale and crop box values
 reduce_factor = 0.5  # Adjust this based on requirements
 crop_box = (1670, 632, 5400, 3850)  # Adjust this as necessary
 

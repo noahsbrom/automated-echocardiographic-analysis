@@ -53,7 +53,7 @@ def unet_model(input_shape):
     model = tf.keras.Model(inputs, outputs, name="U-Net")
     return model
 
-model = unet_model((512, 512, 1))  # # Adjust input shape to match dataset
+model = unet_model((256, 256, 1))  # Adjust input shape to match your dataset
 model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 model.summary()
 
@@ -68,22 +68,36 @@ def load_image_paths(directory):
             filenames.append(filename)
     return file_paths, filenames
 
-def save_processed_images(file_paths, save_directory, final_size=(512, 512)):
+def save_processed_images(file_paths, save_directory, reduce_factor=None, crop_box=None):
+    """
+    Processes and saves images from file paths. The processing includes conversion to grayscale,
+    optional resizing, and optional cropping.
+
+    Parameters:
+        file_paths (list): List of file paths to process.
+        save_directory (str): Directory to save processed images.
+        reduce_factor (float, optional): Factor to scale down images. If None, no resizing is applied.
+        crop_box (tuple, optional): The crop box is a 4-tuple defining the left, upper, right, and lower pixel coordinate.
+    """
     if not os.path.exists(save_directory):
         os.makedirs(save_directory)
     for file_path in tqdm(file_paths, desc="Processing and saving images"):
         with Image.open(file_path) as img:
             # Convert the image to grayscale
             img = img.convert('L')
-            # Resize the image to the final size (512x512)
-            img = img.resize(final_size, Image.Resampling.LANCZOS)  # Change here
+            # Crop the image if a crop box is provided
+            if crop_box:
+                img = img.crop(crop_box)
+            # Resize the image if a reduce factor is provided
+            if reduce_factor:
+                original_size = img.size
+                new_size = (int(original_size[0] * reduce_factor), int(original_size[1] * reduce_factor))
+                img = img.resize(new_size, Image.ANTIALIAS)
             # Save the processed image
             base_name = os.path.basename(file_path)
             new_filename = os.path.splitext(base_name)[0] + '.png'
             save_path = os.path.join(save_directory, new_filename)
             img.save(save_path, 'PNG')
-
-
 
 def batch_load_saved_images(directory, batch_size=10):
     filenames = sorted([f for f in os.listdir(directory) if f.endswith('.png')])
@@ -114,8 +128,8 @@ def check_and_process_images(input_directory, output_directory, processed_dirs, 
 
         if not os.path.exists(processed_input_directory) or not os.listdir(processed_input_directory) or not os.path.exists(processed_output_directory) or not os.listdir(processed_output_directory):
             print(f"Processing and saving {set_type} images...")
-            save_processed_images(input_set, processed_input_directory)
-            save_processed_images(output_set, processed_output_directory)
+            save_processed_images(input_set, processed_input_directory, reduce_factor=reduce_factor)
+            save_processed_images(output_set, processed_output_directory, reduce_factor=reduce_factor)
 
         batch_loaders[set_type] = (
             batch_load_saved_images(processed_input_directory),
@@ -141,6 +155,7 @@ def split_data(input_paths, output_paths, test_size=0.2, val_size=0.25):
 
     return (train_input, train_output), (val_input, val_output), (test_input, test_output)
 
+
 # Set directory paths and process images
 input_directory = 'input'
 output_directory = 'output'
@@ -154,6 +169,7 @@ processed_dirs = {
     'test': ('processed_input/test', 'processed_output/test')
 }
 
+# Update this with appropriate scale and crop box values
 reduce_factor = 0.5  # Adjust this based on requirements
 crop_box = (1670, 632, 5400, 3850)  # Adjust this as necessary
 
@@ -169,58 +185,49 @@ batch_loaders = check_and_process_images(
 #     print(len(sample))
 #     print(sample[0].shape, sample[1].shape)  # Check the shape of the inputs and outputs
 #     break  # Remove or comment out after checking
-# Model Training and Evaluation
-EPOCHS = 10  # Number of epochs to train for
-STEPS_PER_EPOCH = 100  # Number of steps per epoch, adjust based on your data size
-VALIDATION_STEPS = 20  # Number of validation steps, adjust accordingly
+
+
+# Model is defined and compiled
+EPOCHS = 10  # Adjust based on your requirements
+STEPS_PER_EPOCH = 100  # Adjust based on the size of your training dataset and batch size
+VALIDATION_STEPS = 20  # Adjust based on the size of your validation dataset and batch size
 
 # Training Loop
 for epoch in range(EPOCHS):
     print(f'Epoch {epoch + 1}/{EPOCHS}')
 
-    # Reset metrics at the start of each epoch
-    training_losses = []
-    training_accuracies = []
+    # Fetch the generators for training data
+    train_batches = batch_loaders['train']
 
-    # Training batches
-    for step, (input_batch, output_batch) in enumerate(zip(*batch_loaders['train'])):
+    # Iterate over training batches
+    for step, (input_batch, output_batch) in enumerate(train_batches):
         train_loss, train_accuracy = model.train_on_batch(input_batch, output_batch)
-        training_losses.append(train_loss)
-        training_accuracies.append(train_accuracy)
-
         if step >= STEPS_PER_EPOCH - 1:
-            break  # End training loop after predefined number of steps
+            break  # End the loop after a fixed number of steps
+    print(f'Training loss: {train_loss}, Training accuracy: {train_accuracy}')
 
-    # Calculate average training loss and accuracy
-    avg_train_loss = np.mean(training_losses)
-    avg_train_acc = np.mean(training_accuracies)
-    print(f'Training Loss: {avg_train_loss}, Training Accuracy: {avg_train_acc}')
+    # Validation Loop
+    # Fetch the generators for validation data
+    val_batches = batch_loaders['val']
 
-    # Validation loop
-    validation_losses = []
-    validation_accuracies = []
-    for step, (input_batch, output_batch) in enumerate(zip(*batch_loaders['val'])):
-        val_loss, val_accuracy = model.evaluate(input_batch, output_batch, verbose=0)
-        validation_losses.append(val_loss)
-        validation_accuracies.append(val_accuracy)
-
+    val_losses, val_accuracies = [], []
+    for step, (input_batch, output_batch) in enumerate(val_batches):
+        val_loss, val_accuracy = model.test_on_batch(input_batch, output_batch)
+        val_losses.append(val_loss)
+        val_accuracies.append(val_accuracy)
         if step >= VALIDATION_STEPS - 1:
-            break  # End validation loop after predefined number of steps
+            break  # End the loop after a fixed number of steps
+    avg_val_loss, avg_val_accuracy = np.mean(val_losses), np.mean(val_accuracies)
+    print(f'Validation loss: {avg_val_loss}, Validation accuracy: {avg_val_accuracy}')
 
-    # Calculate average validation loss and accuracy
-    avg_val_loss = np.mean(validation_losses)
-    avg_val_acc = np.mean(validation_accuracies)
-    print(f'Validation Loss: {avg_val_loss}, Validation Accuracy: {avg_val_acc}')
+# Test Loop
+# Fetch the generators for test data
+test_batches = batch_loaders['test']
 
-# Testing Loop
-test_losses = []
-test_accuracies = []
-for input_batch, output_batch in zip(*batch_loaders['test']):
+test_losses, test_accuracies = [], []
+for input_batch, output_batch in test_batches:
     test_loss, test_accuracy = model.evaluate(input_batch, output_batch, verbose=0)
     test_losses.append(test_loss)
     test_accuracies.append(test_accuracy)
-
-# Calculate average test loss and accuracy
-avg_test_loss = np.mean(test_losses)
-avg_test_acc = np.mean(test_accuracies)
-print(f'Test Loss: {avg_test_loss}, Test Accuracy: {avg_test_acc}')
+avg_test_loss, avg_test_accuracy = np.mean(test_losses), np.mean(test_accuracies)
+print(f'Test loss: {avg_test_loss}, Test accuracy: {avg_test_accuracy}')
