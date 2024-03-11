@@ -12,50 +12,60 @@ import tensorflow as tf
 
 import tensorflow as tf
 
-def conv_block(inputs, num_filters):
-    x = tf.keras.layers.Conv2D(num_filters, 3, padding="same")(inputs)
+def conv_block(inputs, num_filters, initializer):
+    x = tf.keras.layers.Conv2D(num_filters, 3, padding="same", kernel_initializer=initializer)(inputs)
     x = tf.keras.layers.BatchNormalization()(x)
     x = tf.keras.layers.Activation("relu")(x)
 
-    x = tf.keras.layers.Conv2D(num_filters, 3, padding="same")(x)
+    x = tf.keras.layers.Conv2D(num_filters, 3, padding="same", kernel_initializer=initializer)(x)
     x = tf.keras.layers.BatchNormalization()(x)
     x = tf.keras.layers.Activation("relu")(x)
     return x
 
-def encoder_block(inputs, num_filters):
-    x = conv_block(inputs, num_filters)
+def encoder_block(inputs, num_filters, initializer):
+    x = conv_block(inputs, num_filters, initializer)
     p = tf.keras.layers.MaxPooling2D((2, 2))(x)
     return x, p
 
-def decoder_block(inputs, skip_features, num_filters):
-    x = tf.keras.layers.Conv2DTranspose(num_filters, (2, 2), strides=2, padding="same")(inputs)
+def decoder_block(inputs, skip_features, num_filters, initializer):
+    x = tf.keras.layers.Conv2DTranspose(num_filters, (2, 2), strides=2, padding="same", kernel_initializer=initializer)(inputs)
     x = tf.keras.layers.Concatenate()([x, skip_features])
-    x = conv_block(x, num_filters)
+    x = conv_block(x, num_filters, initializer)
     return x
 
-def unet_model(input_shape):
+
+def unet_model(input_shape, initializer):
     inputs = tf.keras.Input(input_shape)
 
-    s1, p1 = encoder_block(inputs, 64)
-    s2, p2 = encoder_block(p1, 128)
-    s3, p3 = encoder_block(p2, 256)
-    s4, p4 = encoder_block(p3, 512)
+    # Pass initializer to each block
+    s1, p1 = encoder_block(inputs, 64, initializer)
+    s2, p2 = encoder_block(p1, 128, initializer)
+    s3, p3 = encoder_block(p2, 256, initializer)
+    s4, p4 = encoder_block(p3, 512, initializer)
 
-    b1 = conv_block(p4, 1024)
+    b1 = conv_block(p4, 1024, initializer)
 
-    d1 = decoder_block(b1, s4, 512)
-    d2 = decoder_block(d1, s3, 256)
-    d3 = decoder_block(d2, s2, 128)
-    d4 = decoder_block(d3, s1, 64)
+    d1 = decoder_block(b1, s4, 512, initializer)
+    d2 = decoder_block(d1, s3, 256, initializer)
+    d3 = decoder_block(d2, s2, 128, initializer)
+    d4 = decoder_block(d3, s1, 64, initializer)
 
-    outputs = tf.keras.layers.Conv2D(1, 1, padding="same", activation="sigmoid")(d4)
+    outputs = tf.keras.layers.Conv2D(1, 1, padding="same", activation="sigmoid", kernel_initializer=initializer)(d4)
 
     model = tf.keras.Model(inputs, outputs, name="U-Net")
     return model
 
-model = unet_model((512, 512, 1))  # # Adjust input shape to match dataset
-model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+
+initializer = tf.keras.initializers.HeNormal()  # Define the initializer
+
+model = unet_model((512, 512, 1), initializer)    # # Adjust input shape to match dataset
+
+optimizer = tf.keras.optimizers.Adam(learning_rate=0.001, clipvalue=0.5)  # Adjust 'clipvalue' as needed
+model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
 model.summary()
+
+
 
 
 def load_image_paths(directory):
@@ -92,9 +102,14 @@ def batch_load_saved_images(directory, batch_size=10):
         for idx in range(start_idx, min(start_idx + batch_size, len(filenames))):
             file_path = os.path.join(directory, filenames[idx])
             with Image.open(file_path) as img:
-                numpy_image = np.array(img)
-                batch_images.append(numpy_image.astype('float32') / 255.0)
+                # Convert image to numpy array and normalize pixel values to [0, 1]
+                numpy_image = np.array(img).astype('float32') / 255.0
+                # Ensure image has correct dimensions (H, W, Channels)
+                if len(numpy_image.shape) == 2:  # if it's grayscale
+                    numpy_image = numpy_image[..., np.newaxis]
+                batch_images.append(numpy_image)
         yield np.array(batch_images)
+
 
 def check_and_process_images(input_directory, output_directory, processed_dirs, reduce_factor=None, test_size=0.2, val_size=0.25):
     # Load all image paths
