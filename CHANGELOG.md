@@ -1,6 +1,6 @@
 # Change Log Overview
 This log tracks significant decisions, events, and changes to the project as they occur. Each entry is of the form
-### Date: (MM/YY)
+### Date: (MM/DD)
 * description
 * motivation
 * implications
