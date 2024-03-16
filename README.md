@@ -2,8 +2,9 @@
 Some information about the app
 
 ## Starting the app
-To run the app, run `./deploy.sh` from the app directory. 
-The app should now be running on localhost:8080. 
+1. Ensure that python is installed
+2. Run `./deploy.sh` from the app directory. 
+3. The app should now be running on localhost:8080. 
 
 ## Understanding the app
 * The deploy script configures a virtual environment in which
