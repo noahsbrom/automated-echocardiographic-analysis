@@ -23,8 +23,13 @@ if [ ! -f ".venv/bin/flask" ]; then
     pip install Flask > /dev/null 2>&1
 fi
 
+# dir for image uploads of current session
+mkdir static/image-uploads
 
 # run app on localhost:8080
 flask --app app.py run --host localhost --port 8080
 
 echo -e "\nVirtual environment deactivated"
+
+# reset session
+rm -r static/image-uploads

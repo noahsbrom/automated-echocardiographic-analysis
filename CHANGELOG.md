@@ -26,4 +26,9 @@ This log tracks significant decisions, events, and changes to the project as the
 * Micro web framework with a reasonable learning curve
 * Provides lightweight web application for simplicity and effectiveness
 
+### 3/14
+* Decided to use a virtual environment and deploy script for running the app
+* Makes the web app easy to use
+* User can focus solely on analyzing images
+
 
