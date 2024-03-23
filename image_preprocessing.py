@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[4]:
+# In[1]:
 
 
 # Load the image
@@ -68,47 +68,57 @@ def find_endpoints(img_path):
     return [x1,y1,y2]
 
 
-# In[7]:
+# In[2]:
 
 
-directory = 'input'
+# directory = 'input'
 
-for filename in os.listdir(directory):
-    f = os.path.join(directory, filename)
-    # checking if it is a file
-    if os.path.isfile(f):
-        crop_black_edges(f)
+# for filename in os.listdir(directory):
+#     f = os.path.join(directory, filename)
+#     # checking if it is a file
+#     if os.path.isfile(f):
+#         crop_black_edges(f)
     
-directory2 = 'output'
+# directory2 = 'output'
 
-for filename in os.listdir(directory2):
-    f = os.path.join(directory2, filename)
-    # checking if it is a file
-    if os.path.isfile(f):
-        crop_black_edges(f)
+# for filename in os.listdir(directory2):
+#     f = os.path.join(directory2, filename)
+#     # checking if it is a file
+#     if os.path.isfile(f):
+#         crop_black_edges(f)
 
 
-# In[7]:
+# In[3]:
 
 
 # final steps to polishing up directory
 import os
 from PIL import Image
 
-test_directory = 'testoutput'
+input_directory = 'testinput'
+output_directory = 'testoutput'
 
-filenames = []
-for filename in os.listdir(test_directory):
-    f = os.path.join(test_directory, filename)
-    # checking if it is a file
-    if os.path.isfile(f):
-        endpoints = find_endpoints(f)
-        img = Image.open(f)
-        new_img = img.resize((512,512))
+#filenames = []
+for filename in os.listdir(output_directory):
+    f1 = os.path.join(output_directory, filename)
+    f2 = os.path.join(input_directory, filename)
+    if os.path.isfile(f1):
+        # find the endpoints
+        endpoints = find_endpoints(f1)
+#         # resize the images
+#         img1 = Image.open(f1)
+#         new_img1 = img1.resize((512,512))
+#         img2 = Image.open(f2)
+#         new_img2 = img2.resize((512,512))
+        # create new filename
         new_filename = ",".join(endpoints)
         new_filename = new_filename + ".png"
-        filenames.append(new_filename)
-        new_img.save(os.path.join(test_directory, new_filename))
+        
+        #filenames.append(new_filename)
+        f3 = os.path.join(output_directory, new_filename)
+        f4 = os.path.join(input_directory, new_filename)
+        os.rename(f1, f3)
+        os.rename(f2, f4)
 
 
 # In[ ]:
