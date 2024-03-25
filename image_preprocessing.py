@@ -103,13 +103,24 @@ for filename in os.listdir(output_directory):
     f1 = os.path.join(output_directory, filename)
     f2 = os.path.join(input_directory, filename)
     if os.path.isfile(f1):
+        # resize the images
+        img1 = Image.open(f1)
+        new_img1 = img1.resize((512,512))
+        img2 = Image.open(f2)
+        new_img2 = img2.resize((512,512))
+        new_img1.save(f1)
+        new_img2.save(f2)
+
+
+# In[5]:
+
+
+for filename in os.listdir(output_directory):
+    f1 = os.path.join(output_directory, filename)
+    f2 = os.path.join(input_directory, filename)
+    if os.path.isfile(f1):
         # find the endpoints
         endpoints = find_endpoints(f1)
-#         # resize the images
-#         img1 = Image.open(f1)
-#         new_img1 = img1.resize((512,512))
-#         img2 = Image.open(f2)
-#         new_img2 = img2.resize((512,512))
         # create new filename
         new_filename = ",".join(endpoints)
         new_filename = new_filename + ".png"
