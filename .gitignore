@@ -68,3 +68,10 @@ processed_input/train/_2023-02-21-12-24-22.png
 processed_input/train/_2023-02-21-12-39-55.png
 processed_input/train/_2023-02-21-12-40-36.png
 processed_input/train/_2023-02-28-11-27-03.png
+*.png
+processed_output/val/_2023-12-14-12-00-29.png
+*.png
+*.png
+*.png
+*.png
+/old
