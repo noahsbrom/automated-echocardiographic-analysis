@@ -8,5 +8,5 @@ To start:
 
 - After that you can train (cmd python model.py), but the model is already pretrained in the directory: test.h5
 
-- Then you can test the line drawing based on the model, by running: python draw.py
+- Then you can test the line drawing based on the model, by running: python draw.py (you need to provide an input image, see code)
 
