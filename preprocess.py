@@ -113,7 +113,7 @@ def process_output_directory_and_save_coordinates(output_dir, testoutput_dir, te
 def main():
     input_dir = 'input'
     testoutput_dir = 'testoutput'
-    output_dir = 'output_original'
+    output_dir = 'output'
     temp_dir = 'temp'
 
     print("Processing input directory...")
