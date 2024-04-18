@@ -12,6 +12,7 @@ def home():
     return render_template('index.html')
 
 
+"""
 @app.route('/uploaded', methods=['POST'])
 def upload_image():
     image = request.files['image']
@@ -21,13 +22,27 @@ def upload_image():
         image.save(user_image_path)
         return render_template('uploaded.html', image_path = user_image_path)
     return redirect('/')
+"""
+
+@app.route('/uploaded', methods=['POST'])
+def upload_image():
+    images = images = request.files.getlist('image')
+    image_paths = []
+    if images:
+        for image in images:
+            user_image_path = f'./static/image-uploads/{image.filename}'
+            image_paths.append(user_image_path)
+            image.save(user_image_path)
+        session['images_to_process'] = image_paths
+        return render_template('uploaded.html', image_paths=image_paths)
+    return redirect('/')
 
 
 @app.route('/processed')
 def process_image():
-    image_path = session.get('image_to_process')
+    image_paths = session.get('images_to_process')
     ## TODO: update with backend image processing
-    return f'path to local image: {image_path}'
+    return f'path to local images: {image_paths}'
     
 
 

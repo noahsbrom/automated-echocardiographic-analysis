@@ -7,8 +7,10 @@
 </head>
 <body>
     <h2>Uploaded Image</h2>
-    <img src="{{ image_path }}">
-    <br>
+    {% for image_path in image_paths %}
+        <img src="{{ image_path }}">
+        <br>
+    {% endfor %}
     <button onclick="window.location.href='/processed'">Process Image</button>
 </body>
 </html>
