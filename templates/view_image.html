@@ -29,8 +29,30 @@
 </head>
 <body>
   <h1>Processed Image</h1>
-  <img src="{{ url_for('processed_file', filename=filename) }}" alt="Processed Image">
+  <a href="#" onclick="downloadAll()">Download All Processed Images</a>
   <br>
-  <a href="{{ url_for('processed_file', filename=filename) }}" download>Download Processed Image</a>
+
+  {% for filename in filenames %}
+    <img src="{{ url_for('processed_file', filename=filename) }}" alt="Processed Image">
+    <br>
+    <a href="{{ url_for('processed_file', filename=filename) }}" download>Download Processed Image</a>
+    <br>
+  {% endfor %}
+
+  <script>
+    function downloadAll() {
+      var downloadLinks = document.querySelectorAll('[download]');
+      for (var i = 0; i < downloadLinks.length; i++) {
+        // create temporary link for download
+        var link = document.createElement('a'); 
+        link.href = downloadLinks[i].href; 
+        link.setAttribute('download', ''); 
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click(); 
+        document.body.removeChild(link); 
+      }
+    }
+  </script>
 </body>
 </html>

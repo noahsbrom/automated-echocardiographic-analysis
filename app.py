@@ -20,22 +20,28 @@ def upload_file():
     if request.method == 'POST':
         if 'file' not in request.files:
             return render_template('upload.html', message='No file part')
-        file = request.files['file']
-        if file.filename == '':
-            return render_template('upload.html', message='No selected file')
-        if file:
-            filename = secure_filename(file.filename)
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(filepath)
+        
+        files = request.files.getlist('file')
+        processed_files = []
 
-            # Call the modified process_image_with_model function
-            processed_filename = process_image_with_model(model, filepath, app.config['UPLOAD_FOLDER'], app.config['PROCESSED_FOLDER'])
+        if files:
+            for file in files:
 
-            # Check if processing was successful
-            if processed_filename:
-                return render_template('view_image.html', filename=processed_filename)
-            else:
-                return render_template('upload.html', message='Processing failed.')
+                filename = secure_filename(file.filename)
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                file.save(filepath)
+                
+                # Call the modified process_image_with_model function
+                processed_filename = process_image_with_model(model, filepath, app.config['UPLOAD_FOLDER'], app.config['PROCESSED_FOLDER'])
+
+                # Check if processing was successful
+                if processed_filename:
+                    processed_files.append(processed_filename)
+        
+        if len(processed_files) > 0:
+            return render_template('view_image.html', filenames=processed_files)
+        else:
+            return render_template('upload.html', message='Processing failed.')
     return render_template('upload.html')
 
 
