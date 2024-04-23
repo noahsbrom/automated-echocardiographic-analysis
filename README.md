@@ -18,16 +18,15 @@ to the app/static directory.
 
 ## Installing the Tesseract-OCR Engine
 For Windows:
-Download the installer from the official Tesseract GitHub page.
-Run the installer and follow the instructions. It’s important to note the installation path.
-Add Tesseract’s installation path to your system’s PATH environment variable. This is typically C:\Program Files\Tesseract-OCR if you used the default install location.
+1. Download the installer from the official Tesseract GitHub page.
+2. Run the installer and follow the instructions. It’s important to note the installation path.
+3. Add Tesseract’s installation path to your system’s PATH environment variable. This is typically C:\Program Files\Tesseract-OCR if you used the default install location.
 
 For macOS:
-You can install Tesseract using Homebrew:
-brew install tesseract
+1. You can install Tesseract using Homebrew: brew install tesseract
 
 For Linux (Ubuntu/Debian):
 You can install Tesseract using apt-get:
-sudo apt-get update
-sudo apt-get install tesseract-ocr
-sudo apt-get install libtesseract-dev
+1. sudo apt-get update
+2. sudo apt-get install tesseract-ocr
+3. sudo apt-get install libtesseract-dev
