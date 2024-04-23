@@ -25,34 +25,57 @@
     a:hover {
       background-color: #45a049;
     }
+    p {
+      color: #333;
+      margin-top: 20px;
+    }
+    .button-like, .button-like:link, .button-like:visited { /* Apply the same style for button and link */
+      display: inline-block;
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px; /* Increase padding to match the size of the download link */
+      margin: 20px 0;
+      text-decoration: none;
+      cursor: pointer;
+      border: none; /* Remove the default form button border */
+      font-size: 16px; /* Adjust font size to match the download link if needed */
+      outline: none; /* Remove the focus outline */
+      text-align: center;
+    }
+    .button-like:hover, .button-like:active {
+      background-color: #45a049;
+    }
+    /* Ensure the button doesn't inherit the underline from links */
+    .button-like {
+      text-decoration: none;
+    }
   </style>
 </head>
 <body>
   <h1>Processed Image</h1>
-  <a href="#" onclick="downloadAll()">Download All Processed Images</a>
+  <!-- Display the image -->
+  <img src="{{ url_for('processed_file', filename=filename) }}" alt="Processed Image">
   <br>
+  <!-- Display the detected scale height if available -->
+  {% if scale_height %}
+    <p>{{ scale_height }}</p>
+  {% endif %}
+  {% if study_info %}
+  <p>Study: {{ study_info }}</p>
+  {% endif %}
+  {% if series_info %}
+  <p>Series: {{ series_info }}</p>
+  {% endif %}
+  <!-- Provide a download link for the image -->
+  <a href="{{ url_for('processed_file', filename=filename) }}" download>Download Processed Image</a>
 
-  {% for filename in filenames %}
-    <img src="{{ url_for('processed_file', filename=filename) }}" alt="Processed Image">
-    <br>
-    <a href="{{ url_for('processed_file', filename=filename) }}" download>Download Processed Image</a>
-    <br>
-  {% endfor %}
+  <!-- Add this button somewhere within the <body> tag -->
+  <form action="{{ url_for('export_data') }}" method="post" style="display: inline;">
+    <input type="hidden" name="study" value="{{ study_info }}">
+    <input type="hidden" name="series" value="{{ series_info }}">
+    <input type="hidden" name="line_length" value="{{ scale_height }}">
+    <button type="submit" class="button-like">Export to CSV</button>
+  </form>
 
-  <script>
-    function downloadAll() {
-      var downloadLinks = document.querySelectorAll('[download]');
-      for (var i = 0; i < downloadLinks.length; i++) {
-        // create temporary link for download
-        var link = document.createElement('a'); 
-        link.href = downloadLinks[i].href; 
-        link.setAttribute('download', ''); 
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click(); 
-        document.body.removeChild(link); 
-      }
-    }
-  </script>
 </body>
 </html>

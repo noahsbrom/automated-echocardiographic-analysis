@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Batch Processed Images</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; margin-top: 20px; }
+    h1 { color: #333; margin-bottom: 20px; }
+    .image-container {
+      margin-bottom: 40px;
+    }
+    img {
+      max-width: 90%;
+      height: auto;
+      border: 2px solid #555;
+      margin-top: 20px;
+    }
+    a, .button-like {
+      display: inline-block;
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      margin: 10px 5px;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      font-size: 16px;
+    }
+    a:hover, .button-like:hover {
+      background-color: #45a049;
+    }
+    p {
+      color: #333;
+      margin: 5px 0;
+    }
+    .button-like {
+      text-decoration: none;
+      outline: none;
+      text-align: center;
+    }
+    .actions {
+      margin-bottom: 30px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Batch Processed Images</h1>
+
+  <!-- Action buttons for downloading all images and exporting all data -->
+  <div class="actions">
+    <form action="{{ url_for('download_all_images') }}" method="get" style="display: inline;">
+      <button type="submit" class="button-like">Download All Images</button>
+    </form>
+    <form action="{{ url_for('export_all_data') }}" method="get" style="display: inline;">
+      <button type="submit" class="button-like">Export All Data to CSV</button>
+    </form>
+  </div>
+
+  {% for result in results %}
+    <div class="image-container">
+      <!-- Display each processed image -->
+      <img src="{{ url_for('processed_file', filename=result[0]) }}" alt="Processed Image">
+
+      <!-- Display the associated data -->
+      {% if result[1] %}
+        <p>Study: {{ result[1] }}</p>
+      {% endif %}
+      {% if result[2] %}
+        <p>Series: {{ result[2] }}</p>
+      {% endif %}
+      {% if result[3] %}
+        <p>Scale Height: {{ result[3] }}</p>
+      {% endif %}
+      {% if result[4] %}
+        <p>LA Length: {{ result[4] }} mm</p>
+      {% endif %}
+
+      <!-- Download link for the processed image -->
+      <a href="{{ url_for('processed_file', filename=result[0]) }}" download>Download Image</a>
+    </div>
+  {% endfor %}
+</body>
+</html>
