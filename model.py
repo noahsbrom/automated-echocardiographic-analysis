@@ -80,7 +80,7 @@ history = model.fit(
 )
 
 # Fine-tuning
-NUM_LAYERS_TO_UNFREEZE = 10
+NUM_LAYERS_TO_UNFREEZE = 20
 base_model = model.layers[1]  # Access the MobileNetV2 model within your overall model
 base_model.trainable = True
 for layer in base_model.layers[-NUM_LAYERS_TO_UNFREEZE:]:
@@ -105,7 +105,7 @@ predicted_coords = model.predict(X_test)
 
 # Save the model
 print("Saving model...")
-model.save('model.h5')  # Saves the model for later use
+model.save('model3.h5')  # Saves the model for later use
 
 # Compare the actual and predicted coordinates for the first few test images
 num_examples_to_show = 5
